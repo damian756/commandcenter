@@ -12,7 +12,7 @@ const SITE_RESET_ENDPOINTS: { slug: string; url: string; envKey: string }[] = [
   { slug: "lakesguide",        url: "https://thelakesguide.co.uk/api/command-centre/stats",       envKey: "STATS_API_KEY_LAKESGUIDE" },
   { slug: "lakeswildlife",     url: "https://thelakeswildlife.co.uk/api/command-centre/stats",    envKey: "STATS_API_KEY_LW" },
   { slug: "hikethelakes",      url: "https://hikethelakes.com/api/command-centre/stats",          envKey: "STATS_API_KEY_HTL" },
-  { slug: "forefrontimaging",  url: "https://forefrontimaging.co.uk/api/command-centre/stats",    envKey: "STATS_API_KEY_FI" },
+  { slug: "forefrontimaging",  url: "https://streamkit.co.uk/api/command-centre/stats",           envKey: "STATS_API_KEY_FI" },
   { slug: "churchtownmedia",   url: "https://churchtownmedia.co.uk/api/command-centre/stats",     envKey: "STATS_API_KEY_CM" },
   { slug: "seftoncoastnetwork", url: "https://seftoncoast.network/api/command-centre/stats",      envKey: "STATS_API_KEY_SCN" },
   { slug: "alotek",            url: "https://alotekshelters.co.uk/api/command-centre/stats",      envKey: "STATS_API_KEY_ALOTEK" },
