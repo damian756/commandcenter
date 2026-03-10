@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Send, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Send, Search, ChevronLeft, ChevronRight, Pencil, Check, X } from "lucide-react";
 import { EmailComposer } from "./EmailComposer";
 
 type Contact = {
@@ -60,6 +60,9 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composeFor, setComposeFor] = useState<Contact | null>(null);
   const [threads, setThreads] = useState<Record<string, { id: string; subject: string; messages: { direction: string; from: string; to: string; subject: string | null; body: string; sentAt: string }[] }[]>>({});
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailDraft, setEmailDraft] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchContacts = useCallback(async (p: number, s: string, q: string) => {
@@ -106,6 +109,7 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
 
   function handleSelect(id: string) {
     setSelectedId(id);
+    setEditingEmail(false);
     if (!threads[id]) loadThreads(id);
   }
 
@@ -113,6 +117,31 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
     setComposeFor(null);
     fetchContacts(page, status, search);
     if (selectedId) loadThreads(selectedId);
+  }
+
+  function startEditEmail() {
+    if (!selected) return;
+    setEmailDraft(selected.email);
+    setEditingEmail(true);
+  }
+
+  async function saveEmail() {
+    if (!selected || !emailDraft.trim()) return;
+    setSavingEmail(true);
+    try {
+      const res = await fetch(`/api/contacts/${selected.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailDraft.trim() }),
+      });
+      if (res.ok) {
+        setContacts((prev) =>
+          prev.map((c) => c.id === selected.id ? { ...c, email: emailDraft.trim() } : c)
+        );
+        setEditingEmail(false);
+      }
+    } catch {}
+    setSavingEmail(false);
   }
 
   const selected = contacts.find((c) => c.id === selectedId);
@@ -238,10 +267,40 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
       <div className="flex-1 flex flex-col min-w-0">
         {selected ? (
           <>
-            <div className="p-4 border-b border-slate-800 flex items-start justify-between">
-              <div>
+            <div className="p-4 border-b border-slate-800 flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
                 <h2 className="font-semibold text-white">{selected.businessName}</h2>
-                <p className="text-sm text-slate-400">{selected.email}</p>
+
+                {/* Editable email */}
+                {editingEmail ? (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <input
+                      value={emailDraft}
+                      onChange={(e) => setEmailDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") saveEmail(); if (e.key === "Escape") setEditingEmail(false); }}
+                      autoFocus
+                      className="text-sm rounded px-2 py-0.5 bg-slate-800 border border-slate-600 text-white focus:outline-none focus:border-cyan-500 w-64"
+                    />
+                    <button onClick={saveEmail} disabled={savingEmail} className="text-green-400 hover:text-green-300 disabled:opacity-40">
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setEditingEmail(false)} className="text-slate-500 hover:text-slate-300">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 mt-0.5 group">
+                    <p className="text-sm text-slate-400">{selected.email}</p>
+                    <button
+                      onClick={startEditEmail}
+                      className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-slate-400 transition-opacity"
+                      title="Edit email"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
                 {selected.contactName && (
                   <p className="text-sm text-slate-500">{selected.contactName}</p>
                 )}

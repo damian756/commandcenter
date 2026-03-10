@@ -54,8 +54,16 @@ export async function syncContacts(): Promise<Record<string, { added: number; sk
       let skipped = 0;
 
       for (const c of contacts) {
+        // Check by listingId first (so edited emails are never overwritten),
+        // then fall back to email match to avoid duplicates
         const existing = await prisma.contact.findFirst({
-          where: { email: c.email.trim(), site: site.slug },
+          where: {
+            site: site.slug,
+            OR: [
+              { listingId: c.listingId },
+              { email: c.email.trim() },
+            ],
+          },
         });
 
         if (existing) {
