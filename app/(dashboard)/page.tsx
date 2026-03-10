@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { SyncButton } from "@/components/SyncButton";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export default async function MorningPage() {
           <Link href="/analytics" className="text-xs text-cyan-400 hover:text-cyan-300">
             Live analytics →
           </Link>
+          <SyncButton />
         </div>
       </div>
 

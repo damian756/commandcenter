@@ -422,3 +422,12 @@ model HourLog {
 
   @@index([projectId])
 }
+
+// Gandalf AI Conversation History
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String   @default("New conversation")
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
