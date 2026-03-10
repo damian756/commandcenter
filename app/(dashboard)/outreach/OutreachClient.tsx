@@ -338,7 +338,7 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
                       </p>
                       {msg.body && msg.body.trim() ? (
                         <div
-                          className="text-sm text-slate-200 prose prose-invert prose-sm max-w-none"
+                          className="text-sm text-slate-200"
                           dangerouslySetInnerHTML={{ __html: msg.body }}
                         />
                       ) : (
