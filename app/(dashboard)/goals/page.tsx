@@ -58,7 +58,7 @@ export default async function GoalsPage() {
                   })}
                 </span>
                 <span className="text-sm text-slate-400">
-                  Outreach: {t.outreachActual}/{t.outreachTarget} · Blog: {t.blogActual}/{t.blogTarget}
+                  Outreach: {t.outreachActual}/{t.outreachTarget} · Posts: {t.publishingActual}/{t.publishingTarget}
                 </span>
               </div>
             ))}

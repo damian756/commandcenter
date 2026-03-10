@@ -15,3 +15,44 @@ export async function GET(req: NextRequest) {
   });
   return NextResponse.json({ targets });
 }
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const {
+    weekStarting,
+    outreachTarget, outreachActual,
+    publishingTarget, publishingActual,
+    revenueTarget, revenueActual,
+    notes,
+  } = body;
+
+  const target = await prisma.weeklyTarget.upsert({
+    where: { weekStarting: new Date(weekStarting) },
+    create: {
+      weekStarting: new Date(weekStarting),
+      outreachTarget: outreachTarget ?? 0,
+      outreachActual: outreachActual ?? 0,
+      publishingTarget: publishingTarget ?? 0,
+      publishingActual: publishingActual ?? 0,
+      revenueTarget: revenueTarget ?? 0,
+      revenueActual: revenueActual ?? 0,
+      notes: notes ?? null,
+    },
+    update: {
+      outreachTarget: outreachTarget ?? 0,
+      outreachActual: outreachActual ?? 0,
+      publishingTarget: publishingTarget ?? 0,
+      publishingActual: publishingActual ?? 0,
+      revenueTarget: revenueTarget ?? 0,
+      revenueActual: revenueActual ?? 0,
+      notes: notes ?? null,
+    },
+  });
+
+  return NextResponse.json({ target });
+}

@@ -225,23 +225,19 @@ model VerificationToken {
 
 // Accountability
 model WeeklyTarget {
-  id              String   @id @default(cuid())
-  weekStarting    DateTime @unique
-  outreachTarget  Int      @default(15)
-  outreachActual  Int      @default(0)
-  blogTarget      Int      @default(5)
-  blogActual      Int      @default(0)
-  followUpTarget  Int      @default(10)
-  followUpActual  Int      @default(0)
-  meetingTarget   Int      @default(2)
-  meetingActual   Int      @default(0)
-  hubSignUpTarget Int      @default(2)
-  hubSignUpActual Int      @default(0)
-  committed       Boolean  @default(false)
-  reviewCompleted Boolean  @default(false)
-  overallScore    Float?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  weekStarting      DateTime @unique
+  outreachTarget    Int      @default(0)
+  outreachActual    Int      @default(0)
+  publishingTarget  Int      @default(0)
+  publishingActual  Int      @default(0)
+  revenueTarget     Int      @default(0)
+  revenueActual     Int      @default(0)
+  notes             String?  @db.Text
+  committed         Boolean  @default(false)
+  reviewCompleted   Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Streak {
