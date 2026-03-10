@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const PAGE_SIZE = 50;
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -10,35 +12,49 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const filter = searchParams.get("filter"); // unread | follow-up-due | overdue | hot
-  const site = searchParams.get("site");
-  const pipelineStatus = searchParams.get("pipelineStatus");
+  const status = searchParams.get("status") ?? "";
+  const search = searchParams.get("search") ?? "";
+  const site = searchParams.get("site") ?? "";
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
 
   const where: Record<string, unknown> = {};
   if (site) where.site = site;
-  if (pipelineStatus) where.pipelineStatus = pipelineStatus;
-  if (filter === "hot") where.priority = "hot";
-  if (filter === "follow-up-due") {
-    where.nextFollowUp = { lte: new Date(), not: null };
-  }
-  if (filter === "overdue") {
-    where.nextFollowUp = { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) };
+  if (status) where.pipelineStatus = status;
+  if (search) {
+    where.OR = [
+      { businessName: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { contactName: { contains: search, mode: "insensitive" } },
+    ];
   }
 
-  const contacts = await prisma.contact.findMany({
-    where,
-    include: {
-      threads: {
-        take: 1,
-        orderBy: { updatedAt: "desc" },
-        select: { id: true, subject: true, status: true, updatedAt: true },
+  const [contacts, total] = await Promise.all([
+    prisma.contact.findMany({
+      where,
+      include: {
+        threads: {
+          take: 1,
+          orderBy: { updatedAt: "desc" },
+          select: { id: true, subject: true, status: true, updatedAt: true },
+        },
       },
-    },
-    orderBy: [{ lastContactAt: "desc" }, { createdAt: "desc" }],
-    take: 100,
-  });
+      orderBy: [
+        { lastContactAt: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+      ],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.contact.count({ where }),
+  ]);
 
-  return NextResponse.json({ contacts });
+  return NextResponse.json({
+    contacts,
+    total,
+    page,
+    pageSize: PAGE_SIZE,
+    totalPages: Math.ceil(total / PAGE_SIZE),
+  });
 }
 
 export async function POST(req: NextRequest) {

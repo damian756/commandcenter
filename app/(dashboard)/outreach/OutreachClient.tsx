@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Mail, Send, Plus } from "lucide-react";
+import { Send, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { EmailComposer } from "./EmailComposer";
 
 type Contact = {
@@ -12,6 +12,7 @@ type Contact = {
   email: string;
   pipelineStatus: string;
   priority: string;
+  category: string | null;
   nextFollowUp: string | Date | null;
   lastContactAt: string | Date | null;
   threads: { id: string; subject: string; status: string; updatedAt: string | Date }[];
@@ -24,19 +25,76 @@ type Template = {
   body: string;
 };
 
-export function OutreachClient({
-  initialContacts,
-  templates,
-}: {
-  initialContacts: Contact[];
-  templates: Template[];
-}) {
-  const [contacts, setContacts] = useState(initialContacts);
+const STATUS_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "prospect", label: "Prospect" },
+  { value: "engaged", label: "Engaged" },
+  { value: "listing-claimed", label: "Claimed" },
+  { value: "hub-signed", label: "Hub Signed" },
+  { value: "cm-lead", label: "CM Lead" },
+  { value: "cm-signed", label: "CM Signed" },
+  { value: "declined", label: "Declined" },
+  { value: "dormant", label: "Dormant" },
+];
+
+const STATUS_COLOURS: Record<string, string> = {
+  prospect: "bg-slate-700 text-slate-300",
+  engaged: "bg-blue-900/60 text-blue-300",
+  "listing-claimed": "bg-green-900/60 text-green-300",
+  "hub-signed": "bg-emerald-900/60 text-emerald-300",
+  "cm-lead": "bg-amber-900/60 text-amber-300",
+  "cm-signed": "bg-amber-700/60 text-amber-200",
+  declined: "bg-red-900/40 text-red-400",
+  dormant: "bg-slate-800 text-slate-500",
+};
+
+export function OutreachClient({ templates }: { templates: Template[] }) {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("prospect");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composeFor, setComposeFor] = useState<Contact | null>(null);
   const [threads, setThreads] = useState<Record<string, { id: string; subject: string; messages: { direction: string; from: string; to: string; subject: string | null; body: string; sentAt: string }[] }[]>>({});
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const selected = contacts.find((c) => c.id === selectedId);
+  const fetchContacts = useCallback(async (p: number, s: string, q: string) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(p) });
+      if (s) params.set("status", s);
+      if (q) params.set("search", q);
+      const res = await fetch(`/api/contacts?${params}`);
+      const data = await res.json();
+      setContacts(data.contacts ?? []);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 1);
+    } catch {}
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchContacts(page, status, search);
+  }, [page, status, search, fetchContacts]);
+
+  function handleSearchChange(val: string) {
+    setSearchInput(val);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      setSearch(val);
+      setPage(1);
+    }, 300);
+  }
+
+  function handleStatusChange(val: string) {
+    setStatus(val);
+    setPage(1);
+    setSelectedId(null);
+  }
 
   async function loadThreads(contactId: string) {
     const res = await fetch(`/api/threads?contactId=${contactId}`);
@@ -53,67 +111,155 @@ export function OutreachClient({
 
   function handleComposeSent() {
     setComposeFor(null);
-    fetch("/api/contacts")
-      .then((r) => r.json())
-      .then((d) => setContacts(d.contacts ?? contacts));
+    fetchContacts(page, status, search);
     if (selectedId) loadThreads(selectedId);
   }
 
+  const selected = contacts.find((c) => c.id === selectedId);
+
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      <div className="w-80 border-r border-slate-800 overflow-y-auto flex-shrink-0">
-        <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-          <h1 className="font-semibold text-white">Contacts</h1>
-          <a
-            href="/outreach/import"
-            className="text-sm text-cyan-400 hover:text-cyan-300"
-          >
-            Import
-          </a>
-        </div>
-        <ul className="divide-y divide-slate-800/50">
-          {contacts.map((c) => (
-            <li key={c.id}>
+    <div className="flex h-screen bg-slate-950">
+      {/* Sidebar */}
+      <div className="w-80 border-r border-slate-800 flex flex-col flex-shrink-0">
+
+        {/* Header */}
+        <div className="p-3 border-b border-slate-800">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="font-semibold text-white">
+              Contacts
+              {total > 0 && (
+                <span className="ml-2 text-xs font-normal text-slate-500">{total.toLocaleString()}</span>
+              )}
+            </h1>
+            <a href="/outreach/import" className="text-xs text-cyan-400 hover:text-cyan-300">
+              CSV import
+            </a>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-2">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+            <input
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search name or email..."
+              className="w-full pl-8 pr-3 py-1.5 rounded bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-slate-500"
+            />
+          </div>
+
+          {/* Status filter */}
+          <div className="flex gap-1 flex-wrap">
+            {STATUS_OPTIONS.map((opt) => (
               <button
-                onClick={() => handleSelect(c.id)}
-                className={`w-full text-left px-3 py-2.5 hover:bg-slate-800/50 transition ${
-                  selectedId === c.id ? "bg-slate-800" : ""
+                key={opt.value}
+                onClick={() => handleStatusChange(opt.value)}
+                className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                  status === opt.value
+                    ? "border-cyan-500 bg-cyan-900/30 text-cyan-300"
+                    : "border-slate-700 text-slate-400 hover:border-slate-500"
                 }`}
               >
-                <p className="font-medium text-white truncate">{c.businessName}</p>
-                <p className="text-xs text-slate-400 truncate">{c.email}</p>
-                <div className="flex gap-1 mt-1">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">
-                    {c.pipelineStatus}
-                  </span>
-                  {c.priority === "hot" && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-300">
-                      hot
-                    </span>
-                  )}
-                </div>
+                {opt.label}
               </button>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </div>
+
+        {/* Contact list */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="p-4 text-center text-slate-500 text-sm">Loading...</div>
+          ) : contacts.length === 0 ? (
+            <div className="p-4 text-center text-slate-500 text-sm">
+              {search || status ? "No contacts match." : "No contacts yet. Sync from Morning page."}
+            </div>
+          ) : (
+            <ul className="divide-y divide-slate-800/50">
+              {contacts.map((c) => (
+                <li key={c.id}>
+                  <button
+                    onClick={() => handleSelect(c.id)}
+                    className={`w-full text-left px-3 py-2.5 hover:bg-slate-800/50 transition ${
+                      selectedId === c.id ? "bg-slate-800" : ""
+                    }`}
+                  >
+                    <p className="font-medium text-white truncate text-sm">{c.businessName}</p>
+                    <p className="text-xs text-slate-400 truncate">{c.email}</p>
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${STATUS_COLOURS[c.pipelineStatus] ?? "bg-slate-700 text-slate-300"}`}>
+                        {c.pipelineStatus}
+                      </span>
+                      {c.category && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">
+                          {c.category}
+                        </span>
+                      )}
+                      {c.priority === "hot" && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-300">hot</span>
+                      )}
+                      {c.threads.length > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400">
+                          {c.threads[0].status}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="p-3 border-t border-slate-800 flex items-center justify-between">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-1 rounded text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-slate-500">
+              {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-1 rounded text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Detail panel */}
       <div className="flex-1 flex flex-col min-w-0">
         {selected ? (
           <>
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-800 flex items-start justify-between">
               <div>
                 <h2 className="font-semibold text-white">{selected.businessName}</h2>
                 <p className="text-sm text-slate-400">{selected.email}</p>
+                {selected.contactName && (
+                  <p className="text-sm text-slate-500">{selected.contactName}</p>
+                )}
+                {selected.lastContactAt && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    Last contact {formatDistanceToNow(new Date(selected.lastContactAt), { addSuffix: true })}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setComposeFor(selected)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded bg-cyan-600 text-white text-sm hover:bg-cyan-500"
+                className="flex items-center gap-2 px-3 py-1.5 rounded bg-cyan-600 text-white text-sm hover:bg-cyan-500 flex-shrink-0"
               >
                 <Send className="w-4 h-4" />
                 Compose
               </button>
             </div>
+
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {(threads[selected.id] ?? []).map((thread) => (
                 <div key={thread.id} className="space-y-2">
@@ -128,7 +274,7 @@ export function OutreachClient({
                       }`}
                     >
                       <p className="text-xs text-slate-400 mb-1">
-                        {msg.direction === "outbound" ? "You" : msg.from} → {msg.to} ·{" "}
+                        {msg.direction === "outbound" ? "You" : msg.from} →{" "}
                         {formatDistanceToNow(new Date(msg.sentAt), { addSuffix: true })}
                       </p>
                       <div
@@ -140,13 +286,13 @@ export function OutreachClient({
                 </div>
               ))}
               {(!threads[selected.id] || threads[selected.id].length === 0) && (
-                <p className="text-slate-500 text-sm">No threads yet. Click Compose to send an email.</p>
+                <p className="text-slate-500 text-sm">No emails sent yet. Click Compose to send the first one.</p>
               )}
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-slate-500">
-            Select a contact
+          <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
+            Select a contact from the list
           </div>
         )}
       </div>
