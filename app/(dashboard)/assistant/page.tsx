@@ -237,7 +237,7 @@ export default function AssistantPage() {
             </div>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto space-y-6">
+          <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -315,7 +315,7 @@ export default function AssistantPage() {
 
       {/* Input */}
       <div className="px-4 py-4 flex-shrink-0" style={{ borderTop: "1px solid #2a2218", background: "#0d0b09" }}>
-        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
           <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
             <textarea
               value={input}
@@ -354,9 +354,6 @@ export default function AssistantPage() {
               {loading ? "Thinking..." : "Send"}
             </button>
           </div>
-          <p className="text-xs mt-2 text-center" style={{ color: "#3a3028" }}>
-            Gandalf has live access to your site stats, targets, pipeline, and outreach data.
-          </p>
         </form>
       </div>
     </div>
