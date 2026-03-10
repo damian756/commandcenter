@@ -41,9 +41,21 @@ export default function AssistantPage() {
     () => QUOTES[Math.floor(Math.random() * QUOTES.length)]
   );
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const userScrolledUpRef = useRef(false);
+
+  // Detect if user has scrolled up away from the bottom
+  function handleScroll() {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    userScrolledUpRef.current = distanceFromBottom > 80;
+  }
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!userScrolledUpRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   async function send(content: string) {
@@ -146,7 +158,7 @@ export default function AssistantPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 py-6">
         {isEmpty ? (
           <div className="max-w-2xl mx-auto">
             {/* Flanking images — desktop only */}
@@ -243,7 +255,7 @@ export default function AssistantPage() {
                   </div>
                 )}
                 <div
-                  className="rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
+                  className="rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap"
                   style={{
                     maxWidth: "85%",
                     ...(msg.role === "user"
