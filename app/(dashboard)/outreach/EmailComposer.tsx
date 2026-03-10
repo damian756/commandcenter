@@ -160,12 +160,25 @@ export function EmailComposer({
             </div>
             <div className="rounded border border-slate-600 bg-slate-800 overflow-hidden">
               {htmlMode ? (
-                <textarea
-                  value={rawHtml}
-                  onChange={(e) => setRawHtml(e.target.value)}
-                  className="w-full min-h-[200px] p-3 bg-slate-800 text-green-400 text-xs font-mono focus:outline-none resize-none"
-                  placeholder="Paste HTML here..."
-                />
+                <div className="flex flex-col">
+                  <textarea
+                    value={rawHtml}
+                    onChange={(e) => setRawHtml(e.target.value)}
+                    className="w-full min-h-[160px] p-3 bg-slate-950 text-green-400 text-xs font-mono focus:outline-none resize-none border-b border-slate-700"
+                    placeholder="Paste HTML here..."
+                  />
+                  {rawHtml && (
+                    <div className="bg-white">
+                      <p className="text-[10px] text-slate-400 px-2 py-1 bg-slate-800 border-b border-slate-700">Preview</p>
+                      <iframe
+                        srcDoc={rawHtml}
+                        className="w-full min-h-[200px] border-0"
+                        sandbox="allow-same-origin"
+                        title="Email preview"
+                      />
+                    </div>
+                  )}
+                </div>
               ) : (
                 <EditorContent editor={editor} />
               )}
