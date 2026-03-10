@@ -91,8 +91,8 @@ export default async function AlertsPage() {
 
   for (const rm of retainerMonths) {
     if (rm.project.status !== "active") continue;
-    const blogBehind = rm.agreedBlogPosts - (rm.blogPostsDelivered ?? 0);
-    const pagesBehind = rm.agreedPagesCreated - (rm.pagesDelivered ?? 0);
+    const blogBehind = rm.agreedBlogPosts - (rm.blogPostsWritten ?? 0);
+    const pagesBehind = rm.agreedPagesCreated - (rm.pagesCreated ?? 0);
     if (blogBehind > 0) {
       alerts.push({
         level: "info",
