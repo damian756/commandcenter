@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 type ResendInboundPayload = {
   type: string;
   data: {
+    email_id?: string;
     to: string[];
     from: string;
     subject?: string;
@@ -15,6 +17,20 @@ type ResendInboundPayload = {
     text?: string;
   };
 };
+
+async function fetchEmailBody(emailId: string): Promise<{ html: string; text: string }> {
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    // @ts-expect-error - Resend types don't expose retrieve yet but the endpoint exists
+    const email = await resend.emails.get(emailId);
+    return {
+      html: (email as Record<string, string>).html ?? "",
+      text: (email as Record<string, string>).text ?? "",
+    };
+  } catch {
+    return { html: "", text: "" };
+  }
+}
 
 function extractThreadId(toAddresses: string[]): string | null {
   for (const addr of toAddresses) {
@@ -46,9 +62,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  const { to, from, subject, html, text } = payload.data;
+  const { email_id, to, from, subject } = payload.data;
+  let { html, text } = payload.data;
   const toList = Array.isArray(to) ? to : [];
   const threadId = extractThreadId(toList);
+
+  // If body is empty, fetch it from Resend API using email_id
+  if ((!html || html.trim() === "") && (!text || text.trim() === "") && email_id) {
+    const fetched = await fetchEmailBody(email_id);
+    html = fetched.html;
+    text = fetched.text;
+  }
 
   if (!threadId) {
     console.warn("[inbound-email] no thread ID found in To address", to);
@@ -71,6 +95,7 @@ export async function POST(req: NextRequest) {
       subject: subject ?? null,
       body: html ?? text ?? "",
       bodyPlain: text ?? null,
+      resendId: email_id ?? null,
       status: "delivered",
     },
   });
@@ -79,6 +104,12 @@ export async function POST(req: NextRequest) {
   await prisma.thread.update({
     where: { id: thread.id },
     data: { status: "waiting-reply", updatedAt: new Date() },
+  });
+
+  // Fetch contact name for notification
+  const contact = await prisma.contact.findUnique({
+    where: { id: thread.contactId },
+    select: { businessName: true, email: true, pipelineStatus: true },
   });
 
   // Update contact: mark as replied, move to engaged
@@ -90,6 +121,26 @@ export async function POST(req: NextRequest) {
       nextFollowUp: null,
     },
   });
+
+  // Send notification email to Damian
+  if (process.env.RESEND_API_KEY && contact) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: "Command Centre <damian@churchtownmedia.co.uk>",
+        to: "damian@churchtownmedia.co.uk",
+        subject: `Reply from ${contact.businessName}: ${subject ?? "(no subject)"}`,
+        html: `<p><strong>${contact.businessName}</strong> (${from}) has replied to your outreach.</p>
+               <p><strong>Subject:</strong> ${subject ?? "(no subject)"}</p>
+               <hr/>
+               ${html ?? `<p>${text ?? ""}</p>`}
+               <hr/>
+               <p><a href="https://command.churchtownmedia.co.uk/outreach">View in Command Centre →</a></p>`,
+      });
+    } catch (e) {
+      console.warn("[inbound-email] failed to send notification:", e);
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }

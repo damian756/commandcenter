@@ -336,10 +336,14 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
                         {msg.direction === "outbound" ? "You" : msg.from} →{" "}
                         {formatDistanceToNow(new Date(msg.sentAt), { addSuffix: true })}
                       </p>
-                      <div
-                        className="text-sm text-slate-200 prose prose-invert prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: msg.body }}
-                      />
+                      {msg.body && msg.body.trim() ? (
+                        <div
+                          className="text-sm text-slate-200 prose prose-invert prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: msg.body }}
+                        />
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">(no message content)</p>
+                      )}
                     </div>
                   ))}
                 </div>
