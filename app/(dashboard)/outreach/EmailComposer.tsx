@@ -144,6 +144,10 @@ export function EmailComposer({
             </div>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
+          <div className="rounded border border-slate-700 bg-slate-900/50 p-3 text-xs text-slate-500">
+            <p className="font-medium text-slate-400 mb-0.5">Signature (appended automatically)</p>
+            <p>Damian Roche &nbsp;·&nbsp; Director, Churchtown Media &nbsp;·&nbsp; SouthportGuide · FormbyGuide · SeftonLinks</p>
+          </div>
         </div>
         <div className="p-4 border-t border-slate-700 flex justify-end gap-2">
           <button

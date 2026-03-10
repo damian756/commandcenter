@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
+import { getEmailSignature } from "@/lib/email-signature";
 
 function getResend() {
   const key = process.env.RESEND_API_KEY;
@@ -45,12 +46,15 @@ export async function POST(req: NextRequest) {
   const threadId = `thread-${contactId}-${Date.now()}`;
   const replyTo = `reply+${threadId}@reply.churchtownmedia.co.uk`;
 
+  const signature = getEmailSignature();
+  const fullHtml = bodyHtml + signature;
+
   const { data, error } = await resend.emails.send({
     from,
     to: contact.email,
     replyTo,
     subject,
-    html: bodyHtml,
+    html: fullHtml,
     text: bodyPlain ?? bodyHtml.replace(/<[^>]*>/g, ""),
   });
 
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
       from,
       to: contact.email,
       subject,
-      body: bodyHtml,
+      body: fullHtml,
       bodyPlain: bodyPlain ?? null,
       resendId: data?.id ?? null,
       status: "sent",
