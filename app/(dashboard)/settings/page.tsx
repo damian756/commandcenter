@@ -2,6 +2,46 @@
 
 import { useState, useEffect } from "react";
 
+function SyncButton() {
+  const [status, setStatus] = useState<"idle" | "syncing" | "done" | "error">("idle");
+  const [results, setResults] = useState<Record<string, { ok: boolean; error?: string }>>({});
+
+  async function sync() {
+    setStatus("syncing");
+    setResults({});
+    try {
+      const res = await fetch("/api/admin/sync-stats", { method: "POST" });
+      const data = await res.json();
+      setResults(data.synced ?? {});
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div className="text-right">
+      <button
+        onClick={sync}
+        disabled={status === "syncing"}
+        className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
+      >
+        {status === "syncing" ? "Syncing..." : "Sync stats now"}
+      </button>
+      {status === "done" && (
+        <div className="mt-2 text-xs space-y-0.5 text-right">
+          {Object.entries(results).map(([slug, r]) => (
+            <p key={slug} className={r.ok ? "text-emerald-400" : "text-red-400"}>
+              {slug}: {r.ok ? "✓" : r.error}
+            </p>
+          ))}
+        </div>
+      )}
+      {status === "error" && <p className="text-xs text-red-400 mt-1">Sync failed</p>}
+    </div>
+  );
+}
+
 type SiteConfig = {
   id: string;
   slug: string;
@@ -58,9 +98,12 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 max-w-4xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Settings</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage site API keys and endpoints. Changes take effect immediately.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Settings</h1>
+          <p className="text-slate-500 text-sm mt-1">Manage site API keys and endpoints. Changes take effect immediately.</p>
+        </div>
+        <SyncButton />
       </div>
 
       {Object.entries(grouped).map(([network, networkSites]) => (
