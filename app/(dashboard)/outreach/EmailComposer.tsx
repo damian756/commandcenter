@@ -33,6 +33,8 @@ export function EmailComposer({
   const [subject, setSubject] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [htmlMode, setHtmlMode] = useState(false);
+  const [rawHtml, setRawHtml] = useState("");
 
   const editor = useEditor({
     extensions: [
@@ -66,7 +68,7 @@ export function EmailComposer({
       setError("Subject is required");
       return;
     }
-    const html = editor?.getHTML() ?? "";
+    const html = htmlMode ? rawHtml : (editor?.getHTML() ?? "");
     if (!html || html === "<p></p>") {
       setError("Body is required");
       return;
@@ -138,9 +140,35 @@ export function EmailComposer({
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Body</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-slate-400">Body</label>
+              <button
+                type="button"
+                onClick={() => {
+                  if (htmlMode) {
+                    editor?.commands.setContent(rawHtml);
+                    setHtmlMode(false);
+                  } else {
+                    setRawHtml(editor?.getHTML() ?? "");
+                    setHtmlMode(true);
+                  }
+                }}
+                className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:text-white hover:border-slate-400"
+              >
+                {htmlMode ? "Visual" : "HTML"}
+              </button>
+            </div>
             <div className="rounded border border-slate-600 bg-slate-800 overflow-hidden">
-              <EditorContent editor={editor} />
+              {htmlMode ? (
+                <textarea
+                  value={rawHtml}
+                  onChange={(e) => setRawHtml(e.target.value)}
+                  className="w-full min-h-[200px] p-3 bg-slate-800 text-green-400 text-xs font-mono focus:outline-none resize-none"
+                  placeholder="Paste HTML here..."
+                />
+              ) : (
+                <EditorContent editor={editor} />
+              )}
             </div>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
