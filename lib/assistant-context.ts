@@ -17,7 +17,7 @@ export async function buildSystemPrompt(): Promise<string> {
       prisma.streak.findMany(),
       prisma.weeklyTarget.findMany({ orderBy: { weekStarting: "desc" }, take: 4 }),
       prisma.contact.findMany({
-        where: { status: { in: ["new", "contacted"] } },
+        where: { pipelineStatus: { in: ["prospect", "engaged"] } },
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
@@ -167,7 +167,7 @@ Every response ends with one clear next step. Not a list. One step. The most imp
 You do not help with code. That is Cursor's domain. You concern yourself with what Damian does, when he does it, and why it matters.`;
 }
 
-function recentContacts(contacts: { name: string; email: string; brand: string | null; status: string }[]): string {
+function recentContacts(contacts: { contactName: string | null; email: string; businessName: string; pipelineStatus: string }[]): string {
   if (contacts.length === 0) return "No contacts in outreach queue";
-  return contacts.map((c) => `- ${c.name} (${c.email}) — ${c.status} — ${c.brand ?? "no brand"}`).join("\n");
+  return contacts.map((c) => `- ${c.contactName ?? c.businessName} (${c.email}) — ${c.pipelineStatus}`).join("\n");
 }
