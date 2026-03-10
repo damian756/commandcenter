@@ -31,7 +31,7 @@ export function AnalyticsClient() {
     setData(d.sites ?? {});
   }
 
-  const sites = Object.entries(data);
+  const sites = Object.entries(data).sort(([a], [b]) => a.localeCompare(b));
 
   if (loading) {
     return <p className="text-slate-400">Loading analytics...</p>;
