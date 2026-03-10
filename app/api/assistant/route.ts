@@ -27,22 +27,28 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: "Invalid messages" }), { status: 400 });
   }
 
-  const systemPrompt = await buildSystemPrompt();
+  let systemPrompt: string;
+  try {
+    systemPrompt = await buildSystemPrompt();
+  } catch (err) {
+    console.error("[assistant] buildSystemPrompt failed:", err);
+    systemPrompt = "You are Gandalf the Grey. The live context could not be loaded. Respond helpfully with the knowledge you have.";
+  }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-  const stream = await client.messages.stream({
-    model: "claude-sonnet-4-5",
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: messages.map((m) => ({ role: m.role, content: m.content })),
-  });
 
   const encoder = new TextEncoder();
 
   const readableStream = new ReadableStream({
     async start(controller) {
       try {
+        const stream = client.messages.stream({
+          model: "claude-opus-4-5",
+          max_tokens: 1500,
+          system: systemPrompt,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        });
+
         for await (const event of stream) {
           if (
             event.type === "content_block_delta" &&
@@ -51,6 +57,10 @@ export async function POST(req: Request) {
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
+      } catch (err) {
+        console.error("[assistant] stream error:", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        controller.enqueue(encoder.encode(`\n[Error: ${msg}]`));
       } finally {
         controller.close();
       }

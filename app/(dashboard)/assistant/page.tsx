@@ -259,23 +259,19 @@ export default function AssistantPage() {
                         }),
                   }}
                 >
-                  {msg.content ||
-                    (msg.role === "assistant" && loading && (
-                      <span className="inline-flex gap-1 py-1">
-                        <span
-                          className="w-2 h-2 rounded-full animate-bounce [animation-delay:0ms]"
-                          style={{ background: "#7a6030" }}
-                        />
-                        <span
-                          className="w-2 h-2 rounded-full animate-bounce [animation-delay:150ms]"
-                          style={{ background: "#7a6030" }}
-                        />
-                        <span
-                          className="w-2 h-2 rounded-full animate-bounce [animation-delay:300ms]"
-                          style={{ background: "#7a6030" }}
-                        />
-                      </span>
-                    ))}
+                  {msg.role === "assistant" && msg.content === "" && loading ? (
+                    <span className="inline-flex gap-1 py-1">
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: "#7a6030" }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: "#7a6030" }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: "#7a6030" }} />
+                    </span>
+                  ) : msg.role === "assistant" && msg.content === "" && !loading ? (
+                    <span style={{ color: "#7a6a50", fontStyle: "italic" }}>
+                      The wizard did not respond. Try again.
+                    </span>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
                 {msg.role === "user" && (
                   <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-1" style={{ border: "1px solid #3a2e1a" }}>
