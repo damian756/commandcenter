@@ -46,10 +46,6 @@ export function getEmailSignature(): string {
     </tr>
   </table>
 
-  <p style="margin:10px 0 0 0;font-size:11px;color:#9ca3af;font-family:Arial,Helvetica,sans-serif;">
-    Churchtown Media Ltd &nbsp;&bull;&nbsp; Co. No. 16960442 &nbsp;&bull;&nbsp; VAT No. 511024262
-  </p>
-
   <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:12px;">
     <tr>
       <td style="padding-right:2px;">
@@ -85,6 +81,10 @@ export function getEmailSignature(): string {
       </td>
     </tr>
   </table>
+
+  <p style="margin:12px 0 0 0;font-size:11px;color:#9ca3af;font-family:Arial,Helvetica,sans-serif;">
+    Churchtown Media Ltd &nbsp;&bull;&nbsp; Co. No. 16960442 &nbsp;&bull;&nbsp; VAT No. 511024262
+  </p>
 </div>
 `;
 }
