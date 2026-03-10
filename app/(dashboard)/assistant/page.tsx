@@ -118,10 +118,10 @@ export default function AssistantPage() {
       {/* Header */}
       <div className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0" style={{ borderColor: "#2a2218" }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0" style={{ border: "1px solid #5c4a2a" }}>
+          <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0" style={{ border: "1px solid #6a5a3a" }}>
             <Image
-              src="/gandalf-grey.avif"
-              alt="Gandalf the Grey"
+              src="/gandalf-white.webp"
+              alt="Gandalf the White"
               width={36}
               height={36}
               className="object-cover w-full h-full"
@@ -129,11 +129,11 @@ export default function AssistantPage() {
             />
           </div>
           <div>
-            <p className="font-semibold text-sm tracking-wide" style={{ color: "#e8d5a3" }}>
-              Gandalf the Grey
+            <p className="font-semibold text-sm tracking-wide" style={{ color: "#f0e8d0" }}>
+              Gandalf the White
             </p>
             <p className="text-xs" style={{ color: "#5a5040" }}>
-              Ancient counsel. Sees the whole board.
+              Returned from shadow. Sees what must be done.
             </p>
           </div>
         </div>
@@ -151,7 +151,8 @@ export default function AssistantPage() {
           <div className="max-w-2xl mx-auto">
             {/* Flanking images — desktop only */}
             <div className="relative">
-              <div className="hidden lg:block absolute -left-40 top-0 w-36 h-72 pointer-events-none overflow-hidden rounded-xl opacity-25"
+              {/* Flanking: Grey left (the prior — you), White right (the enlightened — him) */}
+              <div className="hidden lg:block absolute -left-40 top-0 w-36 h-72 pointer-events-none overflow-hidden rounded-xl opacity-20"
                 style={{ maskImage: "linear-gradient(to right, transparent, black 50%)" }}>
                 <Image
                   src="/gandalf-grey.avif"
@@ -160,7 +161,7 @@ export default function AssistantPage() {
                   className="object-cover object-top"
                 />
               </div>
-              <div className="hidden lg:block absolute -right-40 top-0 w-36 h-72 pointer-events-none overflow-hidden rounded-xl opacity-25"
+              <div className="hidden lg:block absolute -right-40 top-0 w-36 h-72 pointer-events-none overflow-hidden rounded-xl opacity-30"
                 style={{ maskImage: "linear-gradient(to left, transparent, black 50%)" }}>
                 <Image
                   src="/gandalf-white.webp"
@@ -174,25 +175,25 @@ export default function AssistantPage() {
               <div className="text-center mb-10">
                 <div className="relative w-28 h-28 rounded-full overflow-hidden mx-auto mb-5"
                   style={{
-                    border: "2px solid #5c4a2a",
-                    boxShadow: "0 0 40px rgba(180, 120, 30, 0.15), 0 0 80px rgba(180, 120, 30, 0.05)"
+                    border: "2px solid #8a7a50",
+                    boxShadow: "0 0 50px rgba(220, 200, 140, 0.12), 0 0 100px rgba(220, 200, 140, 0.05)"
                   }}>
                   <Image
-                    src="/gandalf-grey.avif"
-                    alt="Gandalf the Grey"
+                    src="/gandalf-white.webp"
+                    alt="Gandalf the White"
                     fill
                     className="object-cover object-top"
                     priority
                   />
                 </div>
-                <h2 className="text-xl font-semibold tracking-wide mb-1" style={{ color: "#e8d5a3" }}>
+                <h2 className="text-xl font-semibold tracking-wide mb-1" style={{ color: "#f0e8d0" }}>
                   A wizard is never idle.
                 </h2>
                 <p className="text-sm mt-4 italic leading-relaxed max-w-md mx-auto" style={{ color: "#7a6a50" }}>
                   &ldquo;{quote}&rdquo;
                 </p>
-                <p className="text-xs mt-2" style={{ color: "#4a3e2a" }}>
-                  — Gandalf the Grey
+                <p className="text-xs mt-2" style={{ color: "#5a4e38" }}>
+                  — Gandalf the White
                 </p>
               </div>
             </div>
@@ -231,10 +232,10 @@ export default function AssistantPage() {
                 className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-1" style={{ border: "1px solid #3a2e1a" }}>
+                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-1" style={{ border: "1px solid #6a5a3a" }}>
                     <Image
-                      src="/gandalf-grey.avif"
-                      alt="Gandalf"
+                      src="/gandalf-white.webp"
+                      alt="Gandalf the White"
                       width={28}
                       height={28}
                       className="object-cover w-full h-full"
@@ -276,8 +277,8 @@ export default function AssistantPage() {
                 {msg.role === "user" && (
                   <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-1" style={{ border: "1px solid #3a2e1a" }}>
                     <Image
-                      src="/gandalf-white.webp"
-                      alt="You"
+                      src="/gandalf-grey.avif"
+                      alt="You — the prior"
                       width={28}
                       height={28}
                       className="object-cover w-full h-full"
