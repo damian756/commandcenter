@@ -1,0 +1,428 @@
+// Churchtown Media Command Centre - full schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Analytics & Sites
+model SiteConfig {
+  id                   String    @id @default(cuid())
+  slug                 String    @unique
+  name                 String
+  domain               String
+  network              String    // "sefton" | "lakes" | "standalone" | "side-venture"
+  type                 String    // "directory" | "content" | "golf" | "wildlife" | "ecommerce"
+  statsApiUrl          String
+  deepApiUrl           String?   // directory sites only
+  apiKey               String
+  hasRevenue           Boolean   @default(false)
+  hasListings          Boolean   @default(false)
+  weeklyPostTarget     Int       @default(1)
+  monthlyVisitorTarget Int       @default(0)
+  lastFetchAt          DateTime?
+  lastStats            Json?     // cached stats
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+// Outreach CRM
+model Contact {
+  id                String        @id @default(cuid())
+  businessName      String
+  contactName       String?
+  email             String
+  phone             String?
+  website           String?
+  address           String?
+  category          String?
+  listingUrl        String?
+  listingId         String?
+  listingClaimed    Boolean       @default(false)
+  viewCountAtImport Int?          // frozen at import time
+  network           String        @default("sefton")
+  site              String        @default("southportguide")
+  source            String        @default("cold-outreach")
+  pipelineStatus    String        @default("prospect")
+  // prospect | engaged | listing-claimed | hub-signed | cm-lead | cm-signed | declined | dormant
+  lastContactAt     DateTime?
+  lastReplyAt       DateTime?
+  nextFollowUp      DateTime?
+  followUpCount     Int           @default(0)
+  tags              String[]
+  sentiment         String?
+  priority          String        @default("normal") // hot | normal | cold
+  notes             String?       @db.Text
+  linkedIn          String?
+  threads           Thread[]
+  contactNotes      ContactNote[]
+  enrolments        SequenceEnrolment[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([pipelineStatus])
+  @@index([nextFollowUp])
+  @@index([email])
+}
+
+model ContactNote {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([contactId])
+}
+
+model Thread {
+  id        String    @id @default(cuid())
+  contactId String
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  subject   String
+  brand     String    // "southportguide" | "churchtownmedia"
+  status    String    @default("active")
+  // active | waiting-reply | follow-up-due | closed
+  threadId  String    @unique // encoded in Reply-To address
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([contactId])
+  @@index([status])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  direction String   // "outbound" | "inbound"
+  from      String
+  to        String
+  subject   String?
+  body      String   @db.Text
+  bodyPlain String?  @db.Text
+  resendId  String?
+  batchId   String?
+  status    String   @default("sent")
+  // draft | queued | sent | delivered | opened | bounced | failed
+  openedAt  DateTime?
+  sentAt    DateTime @default(now())
+
+  @@index([threadId])
+  @@index([batchId])
+}
+
+model EmailTemplate {
+  id       String   @id @default(cuid())
+  name     String
+  subject  String
+  body     String   @db.Text
+  bodyPlain String?  @db.Text
+  brand    String
+  stage    String?
+  isActive Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OutreachSequence {
+  id         String              @id @default(cuid())
+  name       String
+  brand      String
+  steps      Json
+  isActive   Boolean             @default(true)
+  enrolments SequenceEnrolment[]
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+}
+
+model SequenceEnrolment {
+  id          String           @id @default(cuid())
+  contactId   String
+  contact     Contact          @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sequenceId  String
+  sequence    OutreachSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  currentStep Int              @default(0)
+  nextDueAt   DateTime?
+  status      String           @default("active")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([contactId])
+  @@index([sequenceId])
+  @@index([nextDueAt])
+}
+
+model SendBatch {
+  id         String   @id @default(cuid())
+  name       String
+  templateId String?
+  brand      String
+  status     String   @default("pending")
+  totalCount Int      @default(0)
+  sentCount  Int      @default(0)
+  failedCount Int     @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Outreach CRM - NextAuth
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  name          String?
+  image         String?
+  role          String    @default("admin")
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Accountability
+model WeeklyTarget {
+  id              String   @id @default(cuid())
+  weekStarting    DateTime @unique
+  outreachTarget  Int      @default(15)
+  outreachActual  Int      @default(0)
+  blogTarget      Int      @default(5)
+  blogActual      Int      @default(0)
+  followUpTarget  Int      @default(10)
+  followUpActual  Int      @default(0)
+  meetingTarget   Int      @default(2)
+  meetingActual   Int      @default(0)
+  hubSignUpTarget Int      @default(2)
+  hubSignUpActual Int      @default(0)
+  committed       Boolean  @default(false)
+  reviewCompleted Boolean  @default(false)
+  overallScore    Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Streak {
+  id         String   @id @default(cuid())
+  type       String   @unique
+  currentRun Int      @default(0)
+  longestRun Int      @default(0)
+  lastWeek   DateTime?
+  updatedAt  DateTime @updatedAt
+}
+
+model DailyLog {
+  id           String   @id @default(cuid())
+  date         DateTime @unique
+  buildingHours Float   @default(0)
+  sellingHours  Float   @default(0)
+  intentions   String[]
+  intentionsDone Int    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PersonalBest {
+  id         String   @id @default(cuid())
+  metric     String   @unique
+  value      Float
+  achievedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model QuarterlyGoal {
+  id      String   @id @default(cuid())
+  quarter String   // "2026-Q1"
+  metric  String
+  target  Float
+  current Float    @default(0)
+  unit    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Milestone {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?   @db.Text
+  achievedAt   DateTime  @default(now())
+  autoDetected Boolean   @default(false)
+  category     String?
+  createdAt    DateTime  @default(now())
+}
+
+model Alert {
+  id        String    @id @default(cuid())
+  type      String
+  priority  String    // "critical" | "high" | "normal"
+  title     String
+  message   String    @db.Text
+  site      String?
+  dismissed Boolean   @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
+}
+
+// Content Pipeline
+model ContentItem {
+  id          String    @id @default(cuid())
+  site        String
+  title       String
+  url         String?
+  type        String    // "blog-post" | "guide" | "fell-page" | "species-page"
+  status      String    // "idea" | "assigned" | "drafted" | "reviewed" | "published"
+  dueDate     DateTime?
+  publishedAt DateTime?
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Project Management
+model Project {
+  id             String           @id @default(cuid())
+  name           String
+  clientName     String
+  clientEmail    String?
+  clientContact  String?
+  type           String           // "web-design" | "seo-retainer" | "maintenance" | "side-venture"
+  status         String           // "proposal" | "active" | "completed" | "paused" | "churned"
+  platform       String?
+  contractValue  Float?
+  monthlyFee     Float?
+  startDate      DateTime?
+  endDate        DateTime?
+  nextCallDue    DateTime?
+  lastContactAt  DateTime?
+  liveUrl        String?
+  notes          String?          @db.Text
+  deliverables   Deliverable[]
+  invoices       Invoice[]
+  hourLogs       HourLog[]
+  retainerMonths RetainerMonth[]
+  milestones     ProjectMilestone[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model RetainerMonth {
+  id                  String    @id @default(cuid())
+  projectId           String
+  project              Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  month                String    // "2026-03"
+  agreedBlogPosts      Int       @default(0)
+  agreedPagesCreated   Int       @default(0)
+  agreedTechnical      Int       @default(0)
+  agreedNotes          String?   @db.Text
+  blogPostsWritten     Int       @default(0)
+  pagesCreated         Int       @default(0)
+  technicalCompleted   Int       @default(0)
+  reportDraftedAt      DateTime?
+  reportSentAt         DateTime?
+  reportNotes          String?   @db.Text
+  trafficChangePct     Int?
+  newKeywordsRanking   Int?
+  keywordSnapshot      Json?     // [{keyword, position, lastPosition}]
+  invoiceId            String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@unique([projectId, month])
+  @@index([projectId])
+}
+
+model ProjectMilestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  phase       Int?
+  dueDate     DateTime?
+  completedAt DateTime?
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now())
+}
+
+model Deliverable {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  dueDate     DateTime?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  amount      Float
+  status      String    // "draft" | "sent" | "paid" | "overdue"
+  issuedAt    DateTime?
+  dueAt       DateTime?
+  paidAt      DateTime?
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model HourLog {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  hours     Float
+  date      DateTime
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
