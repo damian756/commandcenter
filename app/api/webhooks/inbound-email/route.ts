@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 // Resend sends inbound email payloads as JSON
+// Note: `to` is string[] in Resend's actual payload, not {email}[]
 type ResendInboundPayload = {
   type: string;
   data: {
-    to: { email: string }[];
+    to: string[];
     from: string;
     subject?: string;
     html?: string;
@@ -15,9 +16,9 @@ type ResendInboundPayload = {
   };
 };
 
-function extractThreadId(toAddresses: { email: string }[]): string | null {
+function extractThreadId(toAddresses: string[]): string | null {
   for (const addr of toAddresses) {
-    const match = addr.email.match(/reply\+([^@]+)@/);
+    const match = addr.match(/reply\+([^@]+)@/);
     if (match) return match[1];
   }
   return null;
@@ -46,7 +47,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { to, from, subject, html, text } = payload.data;
-  const threadId = extractThreadId(to ?? []);
+  const toList = Array.isArray(to) ? to : [];
+  const threadId = extractThreadId(toList);
 
   if (!threadId) {
     console.warn("[inbound-email] no thread ID found in To address", to);
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
       threadId: thread.id,
       direction: "inbound",
       from,
-      to: to.map((a) => a.email).join(", "),
+      to: toList.join(", "),
       subject: subject ?? null,
       body: html ?? text ?? "",
       bodyPlain: text ?? null,

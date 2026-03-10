@@ -50,10 +50,15 @@ export function EmailComposer({
 
   const loadTemplate = useCallback(
     (t: Template) => {
-      setSubject(t.subject);
-      editor?.commands.setContent(t.body);
+      const name = contact.contactName || contact.businessName;
+      const replace = (s: string) =>
+        s.replace(/\{contactName\}/gi, name)
+         .replace(/\{businessName\}/gi, contact.businessName)
+         .replace(/\{email\}/gi, contact.email);
+      setSubject(replace(t.subject));
+      editor?.commands.setContent(replace(t.body));
     },
-    [editor]
+    [editor, contact]
   );
 
   async function handleSend() {

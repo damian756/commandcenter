@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const from = "Damian @ Churchtown Media <damian@churchtownmedia.co.uk>";
   const threadId = `thread-${contactId}-${Date.now()}`;
-  const replyTo = `reply+${threadId}@churchtownmedia.co.uk`;
+  const replyTo = `reply+${threadId}@reply.churchtownmedia.co.uk`;
 
   const { data, error } = await resend.emails.send({
     from,
