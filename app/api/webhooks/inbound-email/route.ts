@@ -21,11 +21,10 @@ type ResendInboundPayload = {
 async function fetchEmailBody(emailId: string): Promise<{ html: string; text: string }> {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    // @ts-expect-error - Resend types don't expose retrieve yet but the endpoint exists
-    const email = await resend.emails.get(emailId);
+    const { data: email } = await resend.emails.get(emailId);
     return {
-      html: (email as Record<string, string>).html ?? "",
-      text: (email as Record<string, string>).text ?? "",
+      html: (email as Record<string, string> | null)?.html ?? "",
+      text: (email as Record<string, string> | null)?.text ?? "",
     };
   } catch {
     return { html: "", text: "" };
