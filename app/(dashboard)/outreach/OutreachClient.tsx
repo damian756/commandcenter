@@ -326,23 +326,27 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
                   {thread.messages.map((msg) => (
                     <div
                       key={msg.sentAt}
-                      className={`rounded p-3 ${
+                      className={`rounded overflow-hidden border ${
                         msg.direction === "outbound"
-                          ? "bg-cyan-900/20 border border-cyan-800/50 ml-4"
-                          : "bg-slate-800/50 border border-slate-700 mr-4"
+                          ? "border-cyan-800/50 ml-4"
+                          : "border-slate-600 mr-4"
                       }`}
                     >
-                      <p className="text-xs text-slate-400 mb-1">
+                      <div className={`px-3 py-1.5 text-xs ${
+                        msg.direction === "outbound"
+                          ? "bg-cyan-900/40 text-cyan-300"
+                          : "bg-slate-700 text-slate-400"
+                      }`}>
                         {msg.direction === "outbound" ? "You" : msg.from} →{" "}
                         {formatDistanceToNow(new Date(msg.sentAt), { addSuffix: true })}
-                      </p>
+                      </div>
                       {msg.body && msg.body.trim() ? (
                         <div
-                          className="text-sm text-slate-200"
+                          className="bg-white p-4 text-sm"
                           dangerouslySetInnerHTML={{ __html: msg.body }}
                         />
                       ) : (
-                        <p className="text-sm text-slate-400 italic">(no message content)</p>
+                        <p className="bg-white p-4 text-sm text-gray-400 italic">(no message content)</p>
                       )}
                     </div>
                   ))}
