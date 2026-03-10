@@ -8,12 +8,12 @@ type Message = {
 };
 
 const SUGGESTED_PROMPTS = [
-  "What's the most important thing I should do today?",
-  "How is my outreach performing this week?",
-  "Which sites need content urgently?",
-  "What's the best strategy for The Open 2026?",
-  "Is there anything I'm avoiding that I shouldn't be?",
-  "What should I be doing with the BID relationship right now?",
+  "What is the most important thing I should do today?",
+  "Which fires are going cold across the network?",
+  "What does The Open 2026 require of me right now?",
+  "Am I avoiding something I shouldn't be?",
+  "How should I approach the BID relationship?",
+  "What does the road ahead look like for the Lakes Network?",
 ];
 
 export default function AssistantPage() {
@@ -96,12 +96,12 @@ export default function AssistantPage() {
       {/* Header */}
       <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-sm font-bold text-white">
-            R
+          <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center text-base flex-shrink-0">
+            🧙
           </div>
           <div>
-            <p className="font-semibold text-white text-sm">Ray</p>
-            <p className="text-xs text-zinc-500">Strategic advisor. Knows the business cold.</p>
+            <p className="font-semibold text-white text-sm">Gandalf the Grey</p>
+            <p className="text-xs text-zinc-500">Ancient counsel. Sees the whole board.</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -115,12 +115,12 @@ export default function AssistantPage() {
         {isEmpty ? (
           <div className="max-w-2xl mx-auto">
             <div className="text-center mb-10">
-              <div className="w-16 h-16 rounded-full bg-orange-500 mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
-                R
+              <div className="w-16 h-16 rounded-full bg-zinc-700 mx-auto mb-4 flex items-center justify-center text-4xl">
+                🧙
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">Morning, Damian.</h2>
+              <h2 className="text-xl font-semibold text-white mb-2">A wizard is never idle.</h2>
               <p className="text-zinc-400 text-sm max-w-sm mx-auto">
-                I have the numbers in front of me. Ask me anything, or let me tell you what you should be doing right now.
+                I have been watching. The data is before me. Ask what you will, or let me tell you what the road requires of you today.
               </p>
             </div>
 
@@ -129,7 +129,7 @@ export default function AssistantPage() {
                 <button
                   key={prompt}
                   onClick={() => send(prompt)}
-                  className="text-left p-4 rounded-xl border border-zinc-700 hover:border-orange-500 hover:bg-zinc-800 transition-colors text-sm text-zinc-300"
+                  className="text-left p-4 rounded-xl border border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800 transition-colors text-sm text-zinc-300 italic"
                 >
                   {prompt}
                 </button>
@@ -141,15 +141,15 @@ export default function AssistantPage() {
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 mt-1">
-                    R
+                  <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-sm flex-shrink-0 mt-1">
+                    🧙
                   </div>
                 )}
                 <div
                   className={`rounded-2xl px-4 py-3 text-sm max-w-[85%] leading-relaxed whitespace-pre-wrap ${
                     msg.role === "user"
-                      ? "bg-orange-500 text-white rounded-tr-sm"
-                      : "bg-zinc-800 text-zinc-200 rounded-tl-sm"
+                      ? "bg-zinc-700 text-white rounded-tr-sm"
+                      : "bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-tl-sm"
                   }`}
                 >
                   {msg.content}
@@ -194,19 +194,19 @@ export default function AssistantPage() {
               placeholder="Ask Ray anything about the business..."
               rows={1}
               disabled={loading}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-orange-500 disabled:opacity-50"
+              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-zinc-500 disabled:opacity-50"
               style={{ maxHeight: "120px", overflowY: "auto" }}
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl px-4 py-3 text-sm font-medium transition-colors flex-shrink-0"
+              className="bg-zinc-600 hover:bg-zinc-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl px-4 py-3 text-sm font-medium transition-colors flex-shrink-0"
             >
               {loading ? "..." : "Send"}
             </button>
           </div>
           <p className="text-xs text-zinc-600 mt-2 text-center">
-            Ray has live access to your site stats, targets, pipeline, and outreach data.
+            Gandalf has live access to your site stats, targets, pipeline, and outreach data.
           </p>
         </form>
       </div>
