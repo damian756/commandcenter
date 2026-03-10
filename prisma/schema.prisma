@@ -110,6 +110,7 @@ model Message {
   status    String   @default("sent")
   // draft | queued | sent | delivered | opened | bounced | failed
   openedAt  DateTime?
+  readAt    DateTime?
   sentAt    DateTime @default(now())
 
   @@index([threadId])

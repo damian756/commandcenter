@@ -104,13 +104,21 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
     const data = await res.json();
     if (data.threads) {
       setThreads((prev) => ({ ...prev, [contactId]: data.threads }));
+      // Mark all inbound messages in these threads as read
+      for (const thread of data.threads) {
+        fetch("/api/outreach/mark-read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ threadId: thread.id }),
+        }).catch(() => {});
+      }
     }
   }
 
   function handleSelect(id: string) {
     setSelectedId(id);
     setEditingEmail(false);
-    if (!threads[id]) loadThreads(id);
+    loadThreads(id);
   }
 
   function handleComposeSent() {
