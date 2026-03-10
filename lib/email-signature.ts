@@ -70,9 +70,14 @@ export function getEmailSignature(): string {
                 <span style="color:#ffffff;">Formby</span><span style="color:#ef4444;">Guide</span>
               </a>
             </td>
-            <td>
+            <td style="padding-right:5px;">
               <a href="https://seftonlinks.com" style="display:inline-block;background-color:#0f172a;text-decoration:none;padding:5px 12px;border-radius:4px;font-size:12px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">
                 <span style="color:#ffffff;">Sefton</span><span style="color:#ef4444;">Links</span>
+              </a>
+            </td>
+            <td>
+              <a href="https://seftoncoastwildlife.co.uk" style="display:inline-block;background-color:#0f172a;text-decoration:none;padding:5px 12px;border-radius:4px;font-size:12px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">
+                <span style="color:#ffffff;">Sefton Coast</span><span style="color:#ef4444;">Wildlife</span>
               </a>
             </td>
           </tr>
