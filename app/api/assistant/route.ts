@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     async start(controller) {
       try {
         const stream = client.messages.stream({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-sonnet-4-5",
           max_tokens: 1500,
           system: systemPrompt,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
