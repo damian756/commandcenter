@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { syncContacts } from "@/lib/sync-contacts";
 
 export const dynamic = "force-dynamic";
 
@@ -67,5 +68,7 @@ export async function GET(req: NextRequest) {
     })
   );
 
-  return NextResponse.json({ synced: results, at: new Date().toISOString() });
+  const contactResults = await syncContacts();
+
+  return NextResponse.json({ synced: results, contacts: contactResults, at: new Date().toISOString() });
 }
