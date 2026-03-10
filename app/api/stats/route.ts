@@ -16,6 +16,7 @@ const ENV_KEY_MAP: Record<string, string> = {
   forefrontimaging: "STATS_API_KEY_FI",
   churchtownmedia: "STATS_API_KEY_CM",
   seftoncoastnetwork: "STATS_API_KEY_SCN",
+  alotek: "STATS_API_KEY_ALOTEK",
 };
 
 export async function GET(req: NextRequest) {

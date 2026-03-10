@@ -127,6 +127,18 @@ const SITE_CONFIGS = [
     hasRevenue: false,
     hasListings: false,
   },
+  {
+    slug: "alotek",
+    name: "Alotek Shelters",
+    domain: "alotekshelters.co.uk",
+    network: "client",
+    type: "ecommerce",
+    statsApiUrl: "https://www.alotekshelters.co.uk/api/command-centre/stats",
+    deepApiUrl: null,
+    apiKey: process.env.STATS_API_KEY_ALOTEK ?? "placeholder",
+    hasRevenue: false,
+    hasListings: false,
+  },
 ];
 
 const STREAKS = [
