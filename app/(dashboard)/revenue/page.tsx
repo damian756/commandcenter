@@ -15,7 +15,7 @@ type SiteData = {
 
 type Invoice = {
   id: string;
-  amountPence: number;
+  amount: number;
   status: string;
   dueAt: string | null;
   project: { name: string; clientName: string };
@@ -51,11 +51,11 @@ export default function RevenuePage() {
 
   const retainerTotal = invoices
     .filter((i) => i.status === "sent")
-    .reduce((s, i) => s + i.amountPence / 100, 0);
+    .reduce((s, i) => s + i.amount, 0);
 
   const overdueTotal = invoices
     .filter((i) => i.status === "overdue" || (i.dueAt && new Date(i.dueAt) < new Date()))
-    .reduce((s, i) => s + i.amountPence / 100, 0);
+    .reduce((s, i) => s + i.amount, 0);
 
   if (loading) {
     return <div className="p-6"><p className="text-slate-400 animate-pulse">Loading...</p></div>;
@@ -141,7 +141,7 @@ export default function RevenuePage() {
                       <td className="px-4 py-2.5 text-slate-400">
                         {inv.dueAt ? new Date(inv.dueAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—"}
                       </td>
-                      <td className="px-4 py-2.5 text-right text-white">£{(inv.amountPence / 100).toFixed(0)}</td>
+                      <td className="px-4 py-2.5 text-right text-white">£{inv.amount.toFixed(0)}</td>
                       <td className={`px-4 py-2.5 text-right text-xs font-medium ${overdue ? "text-red-400" : "text-amber-400"}`}>
                         {overdue ? "Overdue" : "Sent"}
                       </td>
