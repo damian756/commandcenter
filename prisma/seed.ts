@@ -201,6 +201,13 @@ async function main() {
       status: "active",
       liveUrl: "https://streamkit.co.uk",
     },
+    {
+      name: "Churchtown Media",
+      clientName: "Churchtown Media Ltd",
+      type: "owned",
+      status: "active",
+      liveUrl: "https://churchtownmedia.co.uk",
+    },
   ];
 
   for (const p of projects) {
