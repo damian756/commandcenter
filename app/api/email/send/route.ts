@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
   await prisma.contact.update({
     where: { id: contactId },
     data: {
+      pipelineStatus: "engaged",
       lastContactAt: new Date(),
       followUpCount: { increment: 1 },
       nextFollowUp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
