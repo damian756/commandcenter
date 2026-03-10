@@ -215,7 +215,7 @@ async function main() {
       clientName: "Alotek",
       type: "seo-retainer",
       status: "active",
-      monthlyFee: 400,
+      monthlyFee: 650,
       startDate: new Date("2025-01-01"),
     },
     {
