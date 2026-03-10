@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 const SITE_RESET_ENDPOINTS: { slug: string; url: string; envKey: string }[] = [
   { slug: "southportguide",    url: "https://southportguide.co.uk/api/command-centre/stats",      envKey: "STATS_API_KEY_SOUTHPORTGUIDE" },
@@ -42,7 +43,7 @@ export async function POST() {
 
   // Also clear the Command Centre's cached stats so the UI shows 0 immediately
   await prisma.siteConfig.updateMany({
-    data: { lastStats: null, lastFetchAt: null },
+    data: { lastStats: Prisma.DbNull, lastFetchAt: null },
   });
 
   return NextResponse.json({ ok: true, results });
