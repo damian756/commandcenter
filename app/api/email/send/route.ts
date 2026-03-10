@@ -41,14 +41,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Contact not found" }, { status: 404 });
   }
 
-  const from =
-    brand === "churchtownmedia"
-      ? "Damian <damian@churchtownmedia.co.uk>"
-      : "Southport Guide <hello@southportguide.co.uk>";
+  const from = "Damian @ Churchtown Media <damian@churchtownmedia.co.uk>";
+  const threadId = `thread-${contactId}-${Date.now()}`;
+  const replyTo = `reply+${threadId}@churchtownmedia.co.uk`;
 
   const { data, error } = await resend.emails.send({
     from,
     to: contact.email,
+    replyTo,
     subject,
     html: bodyHtml,
     text: bodyPlain ?? bodyHtml.replace(/<[^>]*>/g, ""),
@@ -58,12 +58,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const threadId = `thread-${contactId}-${Date.now()}`;
   const thread = await prisma.thread.create({
     data: {
       contactId,
       subject,
-      brand: brand ?? "southportguide",
+      brand: "churchtownmedia",
       threadId,
     },
   });

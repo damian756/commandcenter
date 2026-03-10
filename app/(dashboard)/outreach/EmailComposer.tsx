@@ -31,7 +31,6 @@ export function EmailComposer({
   onSent: () => void;
 }) {
   const [subject, setSubject] = useState("");
-  const [brand, setBrand] = useState("southportguide");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
@@ -79,7 +78,7 @@ export function EmailComposer({
           subject: subject.trim(),
           bodyHtml: html,
           bodyPlain: html.replace(/<[^>]*>/g, ""),
-          brand,
+          brand: "churchtownmedia",
         }),
       });
       const data = await res.json();
@@ -96,7 +95,10 @@ export function EmailComposer({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="w-full max-w-2xl max-h-[90vh] rounded-lg border border-slate-700 bg-slate-900 flex flex-col overflow-hidden">
         <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-          <h3 className="font-semibold text-white">Compose to {contact.businessName}</h3>
+          <div>
+            <h3 className="font-semibold text-white">Compose to {contact.businessName}</h3>
+            <p className="text-xs text-slate-500 mt-0.5">From: Damian @ Churchtown Media &lt;damian@churchtownmedia.co.uk&gt;</p>
+          </div>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-white"
@@ -121,17 +123,6 @@ export function EmailComposer({
               </div>
             </div>
           )}
-          <div>
-            <label className="block text-xs text-slate-400 mb-1">Brand</label>
-            <select
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-white text-sm"
-            >
-              <option value="southportguide">Southport Guide</option>
-              <option value="churchtownmedia">Churchtown Media</option>
-            </select>
-          </div>
           <div>
             <label className="block text-xs text-slate-400 mb-1">Subject</label>
             <input
