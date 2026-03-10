@@ -57,8 +57,16 @@ export function EmailComposer({
         s.replace(/\{contactName\}/gi, name)
          .replace(/\{businessName\}/gi, contact.businessName)
          .replace(/\{email\}/gi, contact.email);
+      const body = replace(t.body);
       setSubject(replace(t.subject));
-      editor?.commands.setContent(replace(t.body));
+      // If the template body contains HTML tags, use HTML mode to preserve formatting
+      if (/<[a-z][\s\S]*>/i.test(body)) {
+        setRawHtml(body);
+        setHtmlMode(true);
+      } else {
+        setHtmlMode(false);
+        editor?.commands.setContent(body);
+      }
     },
     [editor, contact]
   );
