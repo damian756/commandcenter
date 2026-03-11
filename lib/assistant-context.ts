@@ -54,7 +54,7 @@ export async function buildSystemPrompt(): Promise<string> {
     prisma.thread.findMany({
       include: {
         contact: { select: { businessName: true, contactName: true } },
-        messages: { orderBy: { createdAt: "desc" }, take: 1 },
+        messages: { orderBy: { sentAt: "desc" }, take: 1 },
       },
       orderBy: { updatedAt: "desc" },
       take: 10,
@@ -116,7 +116,7 @@ export async function buildSystemPrompt(): Promise<string> {
   const recentThreadSummary = recentThreads
     .map((t) => {
       const lastMsg = t.messages[0];
-      return `- ${t.contact.businessName}${t.contact.contactName ? ` (${t.contact.contactName})` : ""}: ${lastMsg ? `last ${lastMsg.direction === "inbound" ? "replied" : "sent"} ${Math.floor((now.getTime() - lastMsg.createdAt.getTime()) / 86400000)}d ago` : "no messages"}`;
+      return `- ${t.contact.businessName}${t.contact.contactName ? ` (${t.contact.contactName})` : ""}: ${lastMsg ? `last ${lastMsg.direction === "inbound" ? "replied" : "sent"} ${Math.floor((now.getTime() - lastMsg.sentAt.getTime()) / 86400000)}d ago` : "no messages"}`;
     })
     .join("\n");
 
