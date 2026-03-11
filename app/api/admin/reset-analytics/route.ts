@@ -34,9 +34,13 @@ export async function POST() {
           headers: { "x-api-key": apiKey },
           signal: AbortSignal.timeout(10000),
         });
-        results[slug] = res.ok ? "cleared" : `error ${res.status}`;
+        const status = res.ok ? "cleared" : `error ${res.status}`;
+        console.log(`[reset-analytics] ${slug}: ${status}`);
+        results[slug] = status;
       } catch (e) {
-        results[slug] = `fetch failed: ${e instanceof Error ? e.message : "unknown"}`;
+        const err = `fetch failed: ${e instanceof Error ? e.message : "unknown"}`;
+        console.log(`[reset-analytics] ${slug}: ${err}`);
+        results[slug] = err;
       }
     })
   );
