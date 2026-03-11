@@ -5,10 +5,50 @@ import { buildSystemPrompt } from "@/lib/assistant-context";
 
 export const dynamic = "force-dynamic";
 
+type ImageBlock = {
+  type: "image";
+  source: {
+    type: "base64";
+    media_type: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+    data: string;
+  };
+};
+
+type TextBlock = {
+  type: "text";
+  text: string;
+};
+
+type ContentBlock = ImageBlock | TextBlock;
+
 type Message = {
   role: "user" | "assistant";
-  content: string;
+  content: string | ContentBlock[];
 };
+
+function toAnthropicMessages(messages: Message[]): Anthropic.MessageParam[] {
+  return messages.map((m) => {
+    if (typeof m.content === "string") {
+      return { role: m.role, content: m.content };
+    }
+    return {
+      role: m.role,
+      content: m.content.map((block) => {
+        if (block.type === "image") {
+          return {
+            type: "image" as const,
+            source: {
+              type: "base64" as const,
+              media_type: block.source.media_type,
+              data: block.source.data,
+            },
+          };
+        }
+        return { type: "text" as const, text: block.text };
+      }),
+    };
+  });
+}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -32,21 +72,20 @@ export async function POST(req: Request) {
     systemPrompt = await buildSystemPrompt();
   } catch (err) {
     console.error("[assistant] buildSystemPrompt failed:", err);
-    systemPrompt = "You are Gandalf the Grey. The live context could not be loaded. Respond helpfully with the knowledge you have.";
+    systemPrompt = "You are Gandalf the White. The live context could not be loaded. Respond helpfully with the knowledge you have.";
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
   const encoder = new TextEncoder();
 
   const readableStream = new ReadableStream({
     async start(controller) {
       try {
         const stream = client.messages.stream({
-          model: "claude-sonnet-4-5",
-          max_tokens: 1500,
+          model: "claude-opus-4-5",
+          max_tokens: 2048,
           system: systemPrompt,
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          messages: toAnthropicMessages(messages),
         });
 
         for await (const event of stream) {
