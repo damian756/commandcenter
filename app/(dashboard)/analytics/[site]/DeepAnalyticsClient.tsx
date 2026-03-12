@@ -26,10 +26,6 @@ export function DeepAnalyticsClient({ site }: { site: string }) {
     );
   }
 
-  const analytics = data.analytics as Record<string, unknown> | undefined;
-  const pageViewsLast24h = (analytics?.pageViewsLast24h as number) ?? 0;
-  const pageViewsPrior24h = (analytics?.pageViewsPrior24h as number) ?? 0;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -45,16 +41,6 @@ export function DeepAnalyticsClient({ site }: { site: string }) {
           <option value="30">30 days</option>
           <option value="90">90 days</option>
         </select>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded border border-slate-800 bg-slate-900/50 p-4">
-          <p className="text-xs text-slate-400">Page views (24h)</p>
-          <p className="text-xl font-semibold text-white">{pageViewsLast24h}</p>
-          <p className="text-xs text-slate-500">
-            Prior 24h: {pageViewsPrior24h}
-          </p>
-        </div>
       </div>
 
       <pre className="rounded border border-slate-800 bg-slate-900 p-4 overflow-auto text-xs text-slate-300">

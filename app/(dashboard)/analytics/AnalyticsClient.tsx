@@ -7,7 +7,6 @@ type SiteData = {
   ok: boolean;
   data?: {
     site: string;
-    analytics: { pageviewsToday: number; pageviewsThisWeek: number; pageviewsThisMonth: number };
     content?: { totalListings: number; claimedListings: number; totalBlogPosts: number };
     revenue?: { hubMRR: number; featuredMRR: number; affiliateThisMonth?: number };
   };
@@ -65,10 +64,6 @@ export function AnalyticsClient() {
             </h2>
             {result.ok && result.data ? (
               <div className="space-y-2 text-sm">
-                <p className="text-slate-400">
-                  Today: {result.data.analytics?.pageviewsToday ?? 0} · Week:{" "}
-                  {result.data.analytics?.pageviewsThisWeek ?? 0}
-                </p>
                 {result.data.content && (
                   <p className="text-slate-400">
                     Listings: {result.data.content.claimedListings}/
