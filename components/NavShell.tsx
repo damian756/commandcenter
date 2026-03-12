@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Mail,
-  BarChart3,
   FileText,
   Target,
   FolderKanban,
@@ -20,7 +19,6 @@ const navItems = [
   { href: "/", label: "Morning", icon: LayoutDashboard },
   { href: "/assistant", label: "Gandalf", icon: Bot },
   { href: "/outreach", label: "Outreach", icon: Mail },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/content", label: "Content", icon: FileText },
   { href: "/revenue", label: "Revenue", icon: Target },
   { href: "/projects", label: "Projects", icon: FolderKanban },
