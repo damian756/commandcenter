@@ -5,7 +5,6 @@ import { SyncButton } from "@/components/SyncButton";
 export const dynamic = "force-dynamic";
 
 type StatsData = {
-  analytics?: { pageviewsToday: number; pageviewsThisWeek: number; pageviewsThisMonth: number };
   content?: { totalListings: number; claimedListings: number; lastBlogPostDate: string | null };
   revenue?: { hubMRR: number; featuredMRR: number };
 };
@@ -30,12 +29,6 @@ export default async function MorningPage() {
     stats: s.lastStats as StatsData | null,
   }));
 
-  const totalToday = sitesWithStats.reduce(
-    (sum, s) => sum + (s.stats?.analytics?.pageviewsToday ?? 0), 0
-  );
-  const totalWeek = sitesWithStats.reduce(
-    (sum, s) => sum + (s.stats?.analytics?.pageviewsThisWeek ?? 0), 0
-  );
   const totalMRR = sitesWithStats.reduce(
     (sum, s) => sum + (s.stats?.revenue?.hubMRR ?? 0) + (s.stats?.revenue?.featuredMRR ?? 0), 0
   );
@@ -71,10 +64,8 @@ export default async function MorningPage() {
       </div>
 
       {/* Top stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {[
-          { label: "Pageviews today", value: totalToday.toLocaleString() },
-          { label: "Pageviews this week", value: totalWeek.toLocaleString() },
           { label: "Network MRR", value: `£${totalMRR.toLocaleString()}` },
           {
             label: "Overdue invoices",
@@ -100,16 +91,6 @@ export default async function MorningPage() {
               <p className="text-sm font-medium text-white mb-2">{site.name}</p>
               {site.stats ? (
                 <div className="space-y-1 text-xs text-slate-400">
-                  <div className="flex justify-between">
-                    <span>Today</span>
-                    <span className="text-white font-medium">
-                      {(site.stats.analytics?.pageviewsToday ?? 0).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>This week</span>
-                    <span>{(site.stats.analytics?.pageviewsThisWeek ?? 0).toLocaleString()}</span>
-                  </div>
                   {(site.stats.content?.totalListings ?? 0) > 0 && (
                     <div className="flex justify-between">
                       <span>Listings</span>

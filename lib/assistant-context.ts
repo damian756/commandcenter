@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
 type StatsData = {
-  analytics?: { pageviewsToday: number; pageviewsThisWeek: number; pageviewsThisMonth: number };
   content?: { totalListings: number; claimedListings: number; totalBlogPosts: number; lastBlogPostDate: string | null };
   revenue?: { hubMRR: number; featuredMRR: number; hubMembers: number };
 };
@@ -73,9 +72,6 @@ export async function buildSystemPrompt(): Promise<string> {
       name: s.name,
       domain: s.domain,
       network: s.network,
-      today: stats?.analytics?.pageviewsToday ?? 0,
-      week: stats?.analytics?.pageviewsThisWeek ?? 0,
-      month: stats?.analytics?.pageviewsThisMonth ?? 0,
       listings: stats?.content?.totalListings ?? 0,
       claimed: stats?.content?.claimedListings ?? 0,
       posts: stats?.content?.totalBlogPosts ?? 0,
@@ -87,8 +83,6 @@ export async function buildSystemPrompt(): Promise<string> {
   });
 
   const totalMRR = siteStats.reduce((s, r) => s + r.mrr, 0);
-  const totalWeekViews = siteStats.reduce((s, r) => s + r.week, 0);
-  const totalTodayViews = siteStats.reduce((s, r) => s + r.today, 0);
 
   // Invoices
   const overdueInvoices = invoices.filter(
@@ -186,12 +180,10 @@ ${today}
 ## WHAT GANDALF SEES — LIVE BUSINESS DATA
 
 ### Network Reach (last sync)
-- Today across all sites: ${totalTodayViews.toLocaleString()} pageviews
-- This week across all sites: ${totalWeekViews.toLocaleString()} pageviews
 - Total network MRR: £${totalMRR.toLocaleString()}
 
 ### Site by Site
-${siteStats.map((s) => `- **${s.name}** (${s.domain}): ${s.today} today / ${s.week} this week / ${s.month} this month${s.mrr > 0 ? ` / £${s.mrr} MRR` : ""}${s.listings > 0 ? ` / ${s.claimed}/${s.listings} listings claimed` : ""}${s.posts > 0 ? ` / ${s.posts} posts` : ""}${s.daysSincePost !== null ? ` / last post ${s.daysSincePost}d ago${s.daysSincePost > 14 ? " ⚠️" : ""}` : ""}${!s.synced ? " / ⚠️ not synced" : ""}`).join("\n")}
+${siteStats.map((s) => `- **${s.name}** (${s.domain}):${s.mrr > 0 ? ` £${s.mrr} MRR` : ""}${s.listings > 0 ? ` / ${s.claimed}/${s.listings} listings claimed` : ""}${s.posts > 0 ? ` / ${s.posts} posts` : ""}${s.daysSincePost !== null ? ` / last post ${s.daysSincePost}d ago${s.daysSincePost > 14 ? " ⚠️" : ""}` : ""}${!s.synced ? " / ⚠️ not synced" : ""}`).join("\n")}
 
 ### Active Projects
 ${projectsSummary}
