@@ -26,6 +26,7 @@ type Template = {
 };
 
 const STATUS_OPTIONS = [
+  { value: "__inbox__", label: "Inbox" },
   { value: "", label: "All" },
   { value: "prospect", label: "Prospect" },
   { value: "engaged", label: "Engaged" },
@@ -53,13 +54,13 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("prospect");
+  const [status, setStatus] = useState("__inbox__");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composeFor, setComposeFor] = useState<Contact | null>(null);
-  const [threads, setThreads] = useState<Record<string, { id: string; subject: string; messages: { direction: string; from: string; to: string; subject: string | null; body: string; sentAt: string }[] }[]>>({});
+  const [threads, setThreads] = useState<Record<string, { id: string; subject: string; messages: { direction: string; from: string; to: string; subject: string | null; body: string; bodyPlain: string | null; sentAt: string }[] }[]>>({});
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailDraft, setEmailDraft] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
@@ -69,7 +70,11 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(p) });
-      if (s) params.set("status", s);
+      if (s === "__inbox__") {
+        params.set("inbox", "1");
+      } else if (s) {
+        params.set("status", s);
+      }
       if (q) params.set("search", q);
       const res = await fetch(`/api/contacts?${params}`);
       const data = await res.json();
@@ -192,8 +197,12 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
                 onClick={() => handleStatusChange(opt.value)}
                 className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
                   status === opt.value
-                    ? "border-cyan-500 bg-cyan-900/30 text-cyan-300"
-                    : "border-slate-700 text-slate-400 hover:border-slate-500"
+                    ? opt.value === "__inbox__"
+                      ? "border-emerald-500 bg-emerald-900/30 text-emerald-300"
+                      : "border-cyan-500 bg-cyan-900/30 text-cyan-300"
+                    : opt.value === "__inbox__"
+                      ? "border-emerald-800 text-emerald-500 hover:border-emerald-600"
+                      : "border-slate-700 text-slate-400 hover:border-slate-500"
                 }`}
               >
                 {opt.label}
@@ -212,37 +221,47 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
             </div>
           ) : (
             <ul className="divide-y divide-slate-800/50">
-              {contacts.map((c) => (
-                <li key={c.id}>
-                  <button
-                    onClick={() => handleSelect(c.id)}
-                    className={`w-full text-left px-3 py-2.5 hover:bg-slate-800/50 transition ${
-                      selectedId === c.id ? "bg-slate-800" : ""
-                    }`}
-                  >
-                    <p className="font-medium text-white truncate text-sm">{c.businessName}</p>
-                    <p className="text-xs text-slate-400 truncate">{c.email}</p>
-                    <div className="flex gap-1 mt-1 flex-wrap">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${STATUS_COLOURS[c.pipelineStatus] ?? "bg-slate-700 text-slate-300"}`}>
-                        {c.pipelineStatus}
-                      </span>
-                      {c.category && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">
-                          {c.category}
+              {contacts.map((c) => {
+                const hasReply = c.threads[0]?.status === "waiting-reply";
+                return (
+                  <li key={c.id} className={hasReply ? "border-l-2 border-emerald-500" : "border-l-2 border-transparent"}>
+                    <button
+                      onClick={() => handleSelect(c.id)}
+                      className={`w-full text-left px-3 py-2.5 hover:bg-slate-800/50 transition ${
+                        selectedId === c.id ? "bg-slate-800" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {hasReply && (
+                          <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+                        )}
+                        <p className={`truncate text-sm ${hasReply ? "font-bold text-white" : "font-medium text-white"}`}>
+                          {c.businessName}
+                        </p>
+                      </div>
+                      <p className="text-xs text-slate-400 truncate mt-0.5">{c.email}</p>
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${STATUS_COLOURS[c.pipelineStatus] ?? "bg-slate-700 text-slate-300"}`}>
+                          {c.pipelineStatus}
                         </span>
-                      )}
-                      {c.priority === "hot" && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-300">hot</span>
-                      )}
-                      {c.threads.length > 0 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400">
-                          {c.threads[0].status}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                </li>
-              ))}
+                        {c.category && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">
+                            {c.category}
+                          </span>
+                        )}
+                        {c.priority === "hot" && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-300">hot</span>
+                        )}
+                        {hasReply && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/50 text-emerald-300 font-semibold">
+                            replied
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -353,8 +372,12 @@ export function OutreachClient({ templates }: { templates: Template[] }) {
                           className="bg-white p-4 text-sm"
                           dangerouslySetInnerHTML={{ __html: msg.body }}
                         />
+                      ) : (msg as {bodyPlain?: string}).bodyPlain?.trim() ? (
+                        <pre className="bg-white p-4 text-sm text-gray-800 whitespace-pre-wrap font-sans">
+                          {(msg as {bodyPlain?: string}).bodyPlain}
+                        </pre>
                       ) : (
-                        <p className="bg-white p-4 text-sm text-gray-400 italic">(no message content)</p>
+                        <p className="bg-white p-4 text-sm text-gray-400 italic">(no message content — the sender may have sent a blank reply)</p>
                       )}
                     </div>
                   ))}

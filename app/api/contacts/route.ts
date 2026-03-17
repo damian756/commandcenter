@@ -15,11 +15,16 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status") ?? "";
   const search = searchParams.get("search") ?? "";
   const site = searchParams.get("site") ?? "";
+  const inbox = searchParams.get("inbox") === "1";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
 
   const where: Record<string, unknown> = {};
   if (site) where.site = site;
   if (status) where.pipelineStatus = status;
+  if (inbox) {
+    // "Inbox" view: contacts with at least one waiting-reply thread
+    where.threads = { some: { status: "waiting-reply" } };
+  }
   if (search) {
     where.OR = [
       { businessName: { contains: search, mode: "insensitive" } },
@@ -39,6 +44,8 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: [
+        // Contacts that have replied bubble to the top
+        { lastReplyAt: { sort: "desc", nulls: "last" } },
         { lastContactAt: { sort: "desc", nulls: "last" } },
         { createdAt: "desc" },
       ],

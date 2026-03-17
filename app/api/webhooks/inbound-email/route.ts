@@ -19,16 +19,37 @@ type ResendInboundPayload = {
 };
 
 async function fetchEmailBody(emailId: string): Promise<{ html: string; text: string }> {
+  // First try via Resend SDK
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const { data: email } = await resend.emails.get(emailId);
-    return {
-      html: (email as Record<string, string> | null)?.html ?? "",
-      text: (email as Record<string, string> | null)?.text ?? "",
-    };
+    const { data: email, error } = await resend.emails.get(emailId);
+    if (!error && email) {
+      const record = email as Record<string, unknown>;
+      const html = typeof record.html === "string" ? record.html : "";
+      const text = typeof record.text === "string" ? record.text : "";
+      if (html || text) return { html, text };
+    }
   } catch {
-    return { html: "", text: "" };
+    // fall through to raw fetch
   }
+
+  // Fallback: raw Resend REST API
+  try {
+    const res = await fetch(`https://api.resend.com/emails/${emailId}`, {
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+    });
+    if (res.ok) {
+      const data = await res.json() as Record<string, unknown>;
+      return {
+        html: typeof data.html === "string" ? data.html : "",
+        text: typeof data.text === "string" ? data.text : "",
+      };
+    }
+  } catch {
+    // give up
+  }
+
+  return { html: "", text: "" };
 }
 
 function extractThreadId(toAddresses: string[]): string | null {
@@ -66,11 +87,15 @@ export async function POST(req: NextRequest) {
   const toList = Array.isArray(to) ? to : [];
   const threadId = extractThreadId(toList);
 
-  // If body is empty, fetch it from Resend API using email_id
+  console.log("[inbound-email] received", { email_id, from, subject, toList, hasHtml: !!html, hasText: !!text });
+
+  // If body is empty in the webhook payload, fetch it from Resend API
   if ((!html || html.trim() === "") && (!text || text.trim() === "") && email_id) {
+    console.log("[inbound-email] body empty in payload, fetching from Resend API", email_id);
     const fetched = await fetchEmailBody(email_id);
     html = fetched.html;
     text = fetched.text;
+    console.log("[inbound-email] fetched body", { hasHtml: !!html, hasText: !!text });
   }
 
   if (!threadId) {

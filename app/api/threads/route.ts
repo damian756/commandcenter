@@ -24,6 +24,18 @@ export async function GET(req: NextRequest) {
     include: {
       messages: {
         orderBy: { sentAt: "asc" },
+        select: {
+          id: true,
+          direction: true,
+          from: true,
+          to: true,
+          subject: true,
+          body: true,
+          bodyPlain: true,
+          sentAt: true,
+          status: true,
+          readAt: true,
+        },
       },
     },
     orderBy: { updatedAt: "desc" },
