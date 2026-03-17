@@ -4,49 +4,55 @@ import { Resend } from "resend";
 
 export const dynamic = "force-dynamic";
 
-// Resend sends inbound email payloads as JSON
-// Note: `to` is string[] in Resend's actual payload, not {email}[]
-type ResendInboundPayload = {
-  type: string;
-  data: {
-    email_id?: string;
-    to: string[];
-    from: string;
-    subject?: string;
-    html?: string;
-    text?: string;
-  };
+// Widened type — Resend inbound payload includes more fields than outbound.
+// We capture everything so nothing is silently dropped.
+type ResendInboundData = {
+  email_id?: string;
+  message_id?: string;    // alternative ID field used in some Resend versions
+  to: string[];
+  from: string;
+  subject?: string;
+  html?: string | null;
+  text?: string | null;
+  headers?: Record<string, string> | null;
+  attachments?: unknown[];
+  spam_score?: number;
+  [key: string]: unknown; // catch-all so nothing is lost
 };
 
-async function fetchEmailBody(emailId: string): Promise<{ html: string; text: string }> {
-  // First try via Resend SDK
+type ResendInboundPayload = {
+  type: string;
+  data: ResendInboundData;
+};
+
+async function fetchEmailById(id: string): Promise<{ html: string; text: string }> {
+  // resend.emails.get() — works for both inbound and outbound
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const { data: email, error } = await resend.emails.get(emailId);
+    const { data: email, error } = await resend.emails.get(id);
     if (!error && email) {
-      const record = email as unknown as Record<string, unknown>;
-      const html = typeof record.html === "string" ? record.html : "";
-      const text = typeof record.text === "string" ? record.text : "";
+      const html = email.html ?? "";
+      const text = email.text ?? "";
+      console.log("[inbound-email] SDK fetch result", { id, hasHtml: !!html, hasText: !!text });
       if (html || text) return { html, text };
     }
-  } catch {
-    // fall through to raw fetch
+  } catch (e) {
+    console.warn("[inbound-email] SDK fetch failed", e);
   }
 
-  // Fallback: raw Resend REST API
+  // Raw REST fallback
   try {
-    const res = await fetch(`https://api.resend.com/emails/${emailId}`, {
+    const res = await fetch(`https://api.resend.com/emails/${id}`, {
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
     });
+    const raw = await res.text();
+    console.log("[inbound-email] raw REST response", { id, status: res.status, body: raw.slice(0, 500) });
     if (res.ok) {
-      const data = await res.json() as Record<string, unknown>;
-      return {
-        html: typeof data.html === "string" ? data.html : "",
-        text: typeof data.text === "string" ? data.text : "",
-      };
+      const data = JSON.parse(raw) as { html?: string | null; text?: string | null };
+      return { html: data.html ?? "", text: data.text ?? "" };
     }
-  } catch {
-    // give up
+  } catch (e) {
+    console.warn("[inbound-email] raw REST fetch failed", e);
   }
 
   return { html: "", text: "" };
@@ -67,13 +73,23 @@ export async function POST(req: NextRequest) {
     new URL(req.url).searchParams.get("secret");
 
   if (process.env.COMMAND_CENTRE_WEBHOOK_SECRET && secret !== process.env.COMMAND_CENTRE_WEBHOOK_SECRET) {
-    // Resend may not send the secret as a header — log but don't hard-block during testing
     console.warn("[inbound-email] webhook secret mismatch, proceeding anyway");
   }
 
+  // Read the raw body text first so we can log it before parsing
+  let rawBody: string;
+  try {
+    rawBody = await req.text();
+  } catch {
+    return NextResponse.json({ error: "Could not read body" }, { status: 400 });
+  }
+
+  // Log the full raw payload — this is the key diagnostic line
+  console.log("[inbound-email] RAW PAYLOAD:", rawBody.slice(0, 2000));
+
   let payload: ResendInboundPayload;
   try {
-    payload = await req.json();
+    payload = JSON.parse(rawBody) as ResendInboundPayload;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -82,20 +98,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  const { email_id, to, from, subject } = payload.data;
-  let { html, text } = payload.data;
+  const data = payload.data;
+  const email_id = data.email_id ?? data.message_id; // try both ID fields
+  const { to, from, subject } = data;
+  let html = (typeof data.html === "string" ? data.html : null) ?? "";
+  let text = (typeof data.text === "string" ? data.text : null) ?? "";
   const toList = Array.isArray(to) ? to : [];
   const threadId = extractThreadId(toList);
 
-  console.log("[inbound-email] received", { email_id, from, subject, toList, hasHtml: !!html, hasText: !!text });
+  console.log("[inbound-email] parsed", {
+    email_id,
+    from,
+    subject,
+    toList,
+    hasHtml: !!html,
+    hasText: !!text,
+    htmlLen: html.length,
+    textLen: text.length,
+    allKeys: Object.keys(data),
+  });
 
-  // If body is empty in the webhook payload, fetch it from Resend API
-  if ((!html || html.trim() === "") && (!text || text.trim() === "") && email_id) {
-    console.log("[inbound-email] body empty in payload, fetching from Resend API", email_id);
-    const fetched = await fetchEmailBody(email_id);
+  // If body is empty, try fetching from Resend API using the email ID
+  if (!html.trim() && !text.trim() && email_id) {
+    console.log("[inbound-email] body empty, attempting API fetch for", email_id);
+    const fetched = await fetchEmailById(email_id);
     html = fetched.html;
     text = fetched.text;
-    console.log("[inbound-email] fetched body", { hasHtml: !!html, hasText: !!text });
+    console.log("[inbound-email] after fetch", { hasHtml: !!html, hasText: !!text });
   }
 
   if (!threadId) {
@@ -109,7 +138,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: "thread not found" });
   }
 
-  // Save the inbound message
+  // Save the inbound message — prefer HTML body, fall back to plain text
+  const bodyHtml = html.trim() ? html : (text.trim() ? `<p>${text.replace(/\n/g, "<br/>")}</p>` : "");
   await prisma.message.create({
     data: {
       threadId: thread.id,
@@ -117,8 +147,8 @@ export async function POST(req: NextRequest) {
       from,
       to: toList.join(", "),
       subject: subject ?? null,
-      body: html ?? text ?? "",
-      bodyPlain: text ?? null,
+      body: bodyHtml,
+      bodyPlain: text.trim() ? text : null,
       resendId: email_id ?? null,
       status: "delivered",
     },
@@ -157,7 +187,7 @@ export async function POST(req: NextRequest) {
         html: `<p><strong>${contact.businessName}</strong> (${from}) has replied to your outreach.</p>
                <p><strong>Subject:</strong> ${subject ?? "(no subject)"}</p>
                <hr/>
-               ${html ?? `<p>${text ?? ""}</p>`}
+               ${bodyHtml || "<p><em>(no message content — sender sent a blank reply)</em></p>"}
                <hr/>
                <p><a href="https://command.churchtownmedia.co.uk/outreach">View in Command Centre →</a></p>`,
       });
