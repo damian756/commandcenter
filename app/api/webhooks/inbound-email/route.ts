@@ -24,7 +24,7 @@ async function fetchEmailBody(emailId: string): Promise<{ html: string; text: st
     const resend = new Resend(process.env.RESEND_API_KEY);
     const { data: email, error } = await resend.emails.get(emailId);
     if (!error && email) {
-      const record = email as Record<string, unknown>;
+      const record = email as unknown as Record<string, unknown>;
       const html = typeof record.html === "string" ? record.html : "";
       const text = typeof record.text === "string" ? record.text : "";
       if (html || text) return { html, text };
