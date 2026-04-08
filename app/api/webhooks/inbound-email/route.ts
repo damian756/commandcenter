@@ -72,8 +72,9 @@ export async function POST(req: NextRequest) {
     req.headers.get("webhook-secret") ??
     new URL(req.url).searchParams.get("secret");
 
-  if (process.env.COMMAND_CENTRE_WEBHOOK_SECRET && secret !== process.env.COMMAND_CENTRE_WEBHOOK_SECRET) {
-    console.warn("[inbound-email] webhook secret mismatch, proceeding anyway");
+  const expected = process.env.COMMAND_CENTRE_WEBHOOK_SECRET;
+  if (!expected || secret !== expected) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
   // Read the raw body text first so we can log it before parsing
