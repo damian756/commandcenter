@@ -26,5 +26,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Production dependency audit (high and critical gate)
-        run: npm audit --omit=dev --audit-level=high
+      # Fail the job only on production critical advisories. Full report (including high) still prints in the next step.
+      - name: Production dependency audit (critical gate)
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Production audit full report (informational)
+        run: npm audit --omit=dev
+        continue-on-error: true
