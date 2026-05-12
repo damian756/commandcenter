@@ -14,6 +14,8 @@ concurrency:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/ci?schema=public
     steps:
       - uses: actions/checkout@v4
 
