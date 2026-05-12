@@ -15,6 +15,10 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "lucide-react"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@stripe/stripe-js"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-production:
         dependency-type: production
